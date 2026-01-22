@@ -1,0 +1,96 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "budgetName": {
+            "type": "string",
+            "defaultValue": "kitten-missions-dev-budget",
+            "metadata": {
+                "description": "Name of the budget"
+            }
+        },
+        "amount": {
+            "type": "int",
+            "defaultValue": 100,
+            "metadata": {
+                "description": "The total amount of cost to track with the budget"
+            }
+        },
+        "contactEmails": {
+            "type": "array",
+            "defaultValue": [
+                "faduaelkourti@gmail.com"
+            ],
+            "metadata": {
+                "description": "The list of email addresses to send the budget notification to when the threshold is exceeded"
+            }
+        },
+        "startDate": {
+            "type": "string",
+            "defaultValue": "[concat(utcNow('yyyy'), '-', utcNow('MM'), '-01')]",
+            "metadata": {
+                "description": "The start date for the budget (format: yyyy-MM-dd)"
+            }
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Consumption/budgets",
+            "apiVersion": "2023-11-01",
+            "name": "[parameters('budgetName')]",
+            "properties": {
+                "timePeriod": {
+                    "startDate": "[parameters('startDate')]"
+                },
+                "timeGrain": "Monthly",
+                "amount": "[parameters('amount')]",
+                "category": "Cost",
+                "notifications": {
+                    "Actual_GreaterThan_80_Percent": {
+                        "enabled": true,
+                        "operator": "GreaterThan",
+                        "threshold": 80,
+                        "thresholdType": "Actual",
+                        "contactEmails": "[parameters('contactEmails')]",
+                        "locale": "en-us"
+                    },
+                    "Actual_GreaterThan_100_Percent": {
+                        "enabled": true,
+                        "operator": "GreaterThan",
+                        "threshold": 100,
+                        "thresholdType": "Actual",
+                        "contactEmails": "[parameters('contactEmails')]",
+                        "locale": "en-us"
+                    },
+                    "Forecasted_GreaterThan_100_Percent": {
+                        "enabled": true,
+                        "operator": "GreaterThan",
+                        "threshold": 100,
+                        "thresholdType": "Forecasted",
+                        "contactEmails": "[parameters('contactEmails')]",
+                        "locale": "en-us"
+                    }
+                },
+                "filter": {
+                    "dimensions": {
+                        "name": "ResourceGroupName",
+                        "operator": "In",
+                        "values": [
+                            "rg-kitten-missions-dev"
+                        ]
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "budgetName": {
+            "type": "string",
+            "value": "[parameters('budgetName')]"
+        },
+        "budgetId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Consumption/budgets', parameters('budgetName'))]"
+        }
+    }
+}

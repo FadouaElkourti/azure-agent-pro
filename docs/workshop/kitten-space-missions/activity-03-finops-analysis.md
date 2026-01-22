@@ -173,16 +173,16 @@ explorer.exe finops-report.html
 Verifica que el informe incluya:
 
 #### Sección 1: Executive Summary
-- [ ] **Costo total mensual** claro y destacado
-- [ ] **Indicador visual** (verde/amarillo/rojo) vs budget
-- [ ] **Top 3 recursos costosos** identificados
-- [ ] **Score de optimización** calculado
+- ✅ **Costo total mensual** claro y destacado
+- ✅ **Indicador visual** (verde/amarillo/rojo) vs budget
+- ✅ **Top 3 recursos costosos** identificados
+- ✅ **Score de optimización** calculado
 
 #### Sección 2: Desglose por Recurso
-- [ ] Tabla con TODOS los recursos Azure
-- [ ] Columnas: Recurso, SKU, Costo, % del total
-- [ ] Alternativas más económicas sugeridas
-- [ ] Trade-offs documentados
+- ✅ Tabla con TODOS los recursos Azure
+- ✅ Columnas: Recurso, SKU, Costo, % del total
+- ✅ Alternativas más económicas sugeridas
+- ✅ Trade-offs documentados
 
 Ejemplo esperado:
 
@@ -196,10 +196,10 @@ Ejemplo esperado:
 | **TOTAL** | | **~$20-25** | **100%** | | | |
 
 #### Sección 3: Análisis de SKU Comparativo
-- [ ] App Service: F1 vs B1 vs B2 comparison table
-- [ ] SQL Database: Basic vs S0 vs S1 comparison
-- [ ] Specs técnicas de cada SKU
-- [ ] Recomendación justificada
+- ✅ App Service: F1 vs B1 vs B2 comparison table
+- ✅ SQL Database: Basic vs S0 vs S1 comparison
+- ✅ Specs técnicas de cada SKU
+- ✅ Recomendación justificada
 
 #### Sección 4: Optimizaciones
 - [ ] Auto-shutdown strategy (si aplica)
