@@ -39,7 +39,7 @@ var resourceNames = {
   appService: 'app-${projectName}-${environment}'
   sqlServer: 'sql-${projectName}-${environment}-${uniqueSuffix}'
   sqlDatabase: 'sqldb-${projectName}-${environment}'
-  keyVault: 'kv-${projectName}-${environment}-${uniqueSuffix}'
+  keyVault: 'kv-km-${environment}-${uniqueSuffix}' // Shortened: kv-km-dev-7bt5ye (17 chars max)
   logAnalytics: 'log-${projectName}-${environment}'
   appInsights: 'appi-${projectName}-${environment}'
 }
