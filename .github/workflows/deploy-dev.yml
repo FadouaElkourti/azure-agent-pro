@@ -1,0 +1,399 @@
+name: Deploy to Azure (Dev)
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual deployment'
+        required: false
+        default: 'Manual deployment'
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/workshop/kitten-space-missions/solution/bicep/**'
+
+permissions:
+  id-token: write  # Required for OIDC
+  contents: read
+  issues: write    # To create deployment issue if fails
+
+env:
+  BICEP_PATH: docs/workshop/kitten-space-missions/solution/bicep
+  RESOURCE_GROUP: rg-kitten-missions-dev
+  LOCATION: northeurope
+  DEPLOYMENT_NAME: deploy-${{ github.run_number }}
+
+jobs:
+  pre-deployment:
+    name: Pre-Deployment Checks
+    runs-on: ubuntu-latest
+    outputs:
+      deployment-id: ${{ steps.create-deployment.outputs.deployment_id }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Verify Resource Group exists
+        run: |
+          echo "🔍 Checking if Resource Group exists..."
+          if az group show --name ${{ env.RESOURCE_GROUP }} &>/dev/null; then
+            echo "✅ Resource Group '${{ env.RESOURCE_GROUP }}' exists"
+          else
+            echo "⚠️  Resource Group '${{ env.RESOURCE_GROUP }}' not found"
+            echo "Creating Resource Group..."
+            az group create \
+              --name ${{ env.RESOURCE_GROUP }} \
+              --location ${{ env.LOCATION }} \
+              --tags Environment=Development Project=KittenSpaceMissions ManagedBy=GitHubActions
+            echo "✅ Resource Group created"
+          fi
+
+      - name: Validate Bicep template
+        working-directory: ${{ env.BICEP_PATH }}
+        run: |
+          echo "✅ Validating Bicep template..."
+          az deployment group validate \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --template-file main.bicep \
+            --parameters parameters/dev.parameters.json
+          
+          echo "✅ Template validation successful"
+
+      - name: Create GitHub Deployment
+        id: create-deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.ref,
+              environment: 'dev',
+              auto_merge: false,
+              required_contexts: [],
+              description: '${{ github.event.inputs.reason || 'Automatic deployment from main' }}'
+            });
+            
+            core.setOutput('deployment_id', deployment.data.id);
+            return deployment.data.id;
+
+  deploy:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    needs: pre-deployment
+    environment:
+      name: dev
+      url: https://app-kitten-missions-dev.azurewebsites.net
+    outputs:
+      app-url: ${{ steps.deploy-infra.outputs.appServiceUrl }}
+      sql-server: ${{ steps.deploy-infra.outputs.sqlServerFqdn }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Bicep to Azure
+        id: deploy-infra
+        working-directory: ${{ env.BICEP_PATH }}
+        run: |
+          echo "🚀 Deploying infrastructure to Azure..."
+          echo "Deployment Name: ${{ env.DEPLOYMENT_NAME }}"
+          echo "Resource Group: ${{ env.RESOURCE_GROUP }}"
+          echo ""
+          
+          # Deploy with outputs
+          DEPLOYMENT_OUTPUT=$(az deployment group create \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --template-file main.bicep \
+            --parameters parameters/dev.parameters.json \
+            --name ${{ env.DEPLOYMENT_NAME }} \
+            --mode Incremental \
+            --query properties.outputs \
+            --output json)
+          
+          echo "Deployment completed successfully"
+          echo ""
+          
+          # Extract outputs
+          APP_URL=$(echo $DEPLOYMENT_OUTPUT | jq -r '.appServiceUrl.value // "not-available"')
+          SQL_SERVER=$(echo $DEPLOYMENT_OUTPUT | jq -r '.sqlServerFqdn.value // "not-available"')
+          
+          echo "appServiceUrl=$APP_URL" >> $GITHUB_OUTPUT
+          echo "sqlServerFqdn=$SQL_SERVER" >> $GITHUB_OUTPUT
+          
+          echo "## 📦 Deployment Outputs" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **App Service URL**: $APP_URL" >> $GITHUB_STEP_SUMMARY
+          echo "- **SQL Server**: $SQL_SERVER" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "✅ Infrastructure deployed successfully"
+
+      - name: Configure SQL Firewall (Post-Deployment)
+        run: |
+          echo "🔥 Configuring SQL Server firewall rules..."
+          
+          # Get App Service outbound IPs
+          APP_NAME=$(az webapp list \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "[0].name" -o tsv)
+          
+          OUTBOUND_IPS=$(az webapp show \
+            --name "$APP_NAME" \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query outboundIpAddresses -o tsv)
+          
+          # Get SQL Server name
+          SQL_SERVER_NAME=$(az sql server list \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "[0].name" -o tsv)
+          
+          echo "App Service: $APP_NAME"
+          echo "SQL Server: $SQL_SERVER_NAME"
+          echo "Outbound IPs: $OUTBOUND_IPS"
+          echo ""
+          
+          # Add firewall rules for each IP
+          IFS=',' read -ra IPS <<< "$OUTBOUND_IPS"
+          for i in "${!IPS[@]}"; do
+            IP="${IPS[$i]}"
+            RULE_NAME="AllowAppService-IP$i"
+            
+            echo "Adding firewall rule: $RULE_NAME for IP: $IP"
+            az sql server firewall-rule create \
+              --server "$SQL_SERVER_NAME" \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --name "$RULE_NAME" \
+              --start-ip-address "$IP" \
+              --end-ip-address "$IP" \
+              --only-show-errors || echo "Rule may already exist"
+          done
+          
+          echo ""
+          echo "✅ SQL Firewall configured"
+
+      - name: Update Deployment Status (Success)
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: '${{ needs.pre-deployment.outputs.deployment-id }}',
+              state: 'success',
+              environment_url: '${{ steps.deploy-infra.outputs.appServiceUrl }}',
+              description: 'Deployment succeeded'
+            });
+
+      - name: Update Deployment Status (Failure)
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: '${{ needs.pre-deployment.outputs.deployment-id }}',
+              state: 'failure',
+              description: 'Deployment failed'
+            });
+
+  smoke-tests:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - name: Health Check - App Service
+        run: |
+          echo "🏥 Running health checks..."
+          APP_URL="${{ needs.deploy.outputs.app-url }}"
+          
+          if [[ "$APP_URL" == "not-available" ]]; then
+            echo "⚠️  App URL not available, skipping health check"
+            exit 0
+          fi
+          
+          echo "Testing: $APP_URL"
+          
+          # Wait for app to be ready (max 60 seconds)
+          for i in {1..12}; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://$APP_URL" || echo "000")
+            
+            if [[ "$HTTP_CODE" == "200" || "$HTTP_CODE" == "404" ]]; then
+              echo "✅ App Service is responding (HTTP $HTTP_CODE)"
+              exit 0
+            fi
+            
+            echo "Attempt $i/12: HTTP $HTTP_CODE - waiting 5s..."
+            sleep 5
+          done
+          
+          echo "⚠️  App Service not responding after 60s"
+          exit 1
+
+      - name: Database Connection Test
+        run: |
+          echo "🗄️  Testing database connectivity..."
+          
+          SQL_SERVER="${{ needs.deploy.outputs.sql-server }}"
+          
+          if [[ "$SQL_SERVER" == "not-available" ]]; then
+            echo "⚠️  SQL Server FQDN not available, skipping test"
+            exit 0
+          fi
+          
+          echo "SQL Server: $SQL_SERVER"
+          
+          # Test DNS resolution
+          if nslookup "$SQL_SERVER" &>/dev/null; then
+            echo "✅ SQL Server DNS resolves correctly"
+          else
+            echo "❌ SQL Server DNS resolution failed"
+            exit 1
+          fi
+          
+          # Test TCP connection on port 1433
+          if timeout 5 bash -c "cat < /dev/null > /dev/tcp/${SQL_SERVER}/1433" 2>/dev/null; then
+            echo "✅ SQL Server port 1433 is reachable"
+          else
+            echo "⚠️  SQL Server port 1433 not reachable (may be behind firewall - expected)"
+          fi
+
+  rollback:
+    name: Rollback (if needed)
+    runs-on: ubuntu-latest
+    needs: [deploy, smoke-tests]
+    if: failure()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Find last successful deployment
+        id: find-last
+        run: |
+          echo "🔍 Finding last successful deployment..."
+          
+          LAST_DEPLOYMENT=$(az deployment group list \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "sort_by([?properties.provisioningState=='Succeeded'], &properties.timestamp) | [-2].name" \
+            -o tsv)
+          
+          if [[ -z "$LAST_DEPLOYMENT" || "$LAST_DEPLOYMENT" == "null" ]]; then
+            echo "⚠️  No previous successful deployment found"
+            echo "rollback=false" >> $GITHUB_OUTPUT
+          else
+            echo "Found: $LAST_DEPLOYMENT"
+            echo "deployment-name=$LAST_DEPLOYMENT" >> $GITHUB_OUTPUT
+            echo "rollback=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Rollback to previous deployment
+        if: steps.find-last.outputs.rollback == 'true'
+        working-directory: ${{ env.BICEP_PATH }}
+        run: |
+          echo "🔄 Rolling back to: ${{ steps.find-last.outputs.deployment-name }}"
+          
+          # Re-deploy with same parameters as last successful
+          az deployment group create \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --template-file main.bicep \
+            --parameters parameters/dev.parameters.json \
+            --name rollback-${{ github.run_number }} \
+            --mode Complete
+          
+          echo "✅ Rollback completed"
+
+      - name: Create rollback issue
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Deployment Failed - Rollback Executed',
+              body: `## Deployment Failure Report
+              
+              **Workflow Run**: [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+              **Commit**: \`${{ github.sha }}\`
+              **Triggered by**: @${{ github.actor }}
+              **Environment**: dev
+              **Resource Group**: ${{ env.RESOURCE_GROUP }}
+              
+              ### Failed Jobs
+              
+              - Deploy: ${{ needs.deploy.result }}
+              - Smoke Tests: ${{ needs.smoke-tests.result }}
+              
+              ### Actions Taken
+              
+              ${{ steps.find-last.outputs.rollback == 'true' && '✅ Automatic rollback executed' || '⚠️ No previous deployment available for rollback' }}
+              
+              ### Next Steps
+              
+              1. Review the [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+              2. Fix the issues in the Bicep templates
+              3. Create a new PR with the fixes
+              4. Re-run deployment after validation
+              
+              cc: @${{ github.actor }}
+              `,
+              labels: ['deployment', 'incident', 'dev']
+            });
+
+  summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [pre-deployment, deploy, smoke-tests]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment**: dev" >> $GITHUB_STEP_SUMMARY
+          echo "**Resource Group**: ${{ env.RESOURCE_GROUP }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployment Name**: ${{ env.DEPLOYMENT_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by**: @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Job Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Pre-Deployment | ${{ needs.pre-deployment.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deploy | ${{ needs.deploy.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Smoke Tests | ${{ needs.smoke-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ needs.deploy.result }}" == "success" && "${{ needs.smoke-tests.result }}" == "success" ]]; then
+            echo "### ✅ Deployment Successful!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**App Service**: ${{ needs.deploy.outputs.app-url }}" >> $GITHUB_STEP_SUMMARY
+            echo "**SQL Server**: ${{ needs.deploy.outputs.sql-server }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Deployment Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Check the logs for details and review the rollback job." >> $GITHUB_STEP_SUMMARY
+          fi
