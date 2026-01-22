@@ -368,7 +368,7 @@ az account show
 cd docs/workshop/kitten-space-missions/solution/bicep
 
 # What-If deployment (sin desplegar)
-az deployment sub what-if \
+az deployment group what-if \
   --location westeurope \
   --template-file main.bicep \
   --parameters parameters/dev.parameters.json \

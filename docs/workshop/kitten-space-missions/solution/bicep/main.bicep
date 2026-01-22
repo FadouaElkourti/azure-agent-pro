@@ -54,9 +54,6 @@ var commonTags = {
   Purpose: 'kitten-space-missions-api'
 }
 
-// SQL Database firewall allowed IPs (empty for now, will be populated with App Service IPs)
-var sqlAllowedIps = []
-
 // ========================================
 // MODULE: MONITORING (Log Analytics + Application Insights)
 // ========================================
@@ -76,53 +73,7 @@ module monitoring './modules/monitoring.bicep' = {
 }
 
 // ========================================
-// MODULE: KEY VAULT
-// ========================================
-
-module keyVault '../../../../bicep/modules/key-vault.bicep' = {
-  name: 'deploy-keyvault-${uniqueString(deployment().name)}'
-  params: {
-    keyVaultName: resourceNames.keyVault
-    location: location
-    sku: 'standard' // Standard tier for dev
-    enableRbacAuthorization: true
-    enableSoftDelete: true
-    softDeleteRetentionInDays: 7 // Minimum for dev
-    enablePurgeProtection: false // Allow purge in dev for testing
-    publicNetworkAccess: 'enabled' // Public access for dev (change to 'disabled' for prod)
-    networkAclsDefaultAction: 'Allow' // Allow all for dev simplicity
-    tags: commonTags
-  }
-}
-
-// ========================================
-// MODULE: SQL DATABASE
-// ========================================
-
-module sqlDatabase '../../../../bicep/modules/sql-database.bicep' = {
-  name: 'deploy-sql-${uniqueString(deployment().name)}'
-  params: {
-    sqlServerName: resourceNames.sqlServer
-    location: location
-    databaseName: resourceNames.sqlDatabase
-    databaseSku: 'Basic' // Cost-optimized for dev
-    enableAzureADAuth: true
-    azureAdAdminObjectId: sqlAzureAdAdminObjectId
-    azureAdAdminUsername: sqlAzureAdAdminUsername
-    enableTDE: true
-    enableThreatProtection: false // Disabled for dev cost optimization
-    enableAuditing: true
-    logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
-    enablePrivateEndpoint: false // No Private Endpoint for dev (cost optimization)
-    backupRetentionDays: 7 // Minimum for dev
-    enableGeoRedundantBackup: false // No geo-redundancy for dev
-    allowedIpAddresses: sqlAllowedIps
-    tags: commonTags
-  }
-}
-
-// ========================================
-// MODULE: APP SERVICE
+// MODULE: APP SERVICE (Deploy first to get outbound IPs)
 // ========================================
 
 module appService './modules/app-service.bicep' = {
@@ -148,15 +99,8 @@ module appService './modules/app-service.bicep' = {
       minCapacity: 1
       maxCapacity: 3
     }
-    keyVaultName: resourceNames.keyVault
     appInsightsConnectionString: monitoring.outputs.applicationInsightsConnectionString
     appInsightsInstrumentationKey: monitoring.outputs.applicationInsightsInstrumentationKey
-    customAppSettings: {
-      ASPNETCORE_ENVIRONMENT: environment == 'dev' ? 'Development' : 'Production'
-      PROJECT_NAME: projectName
-      SQL_DATABASE_NAME: resourceNames.sqlDatabase
-      SQL_SERVER_NAME: '${resourceNames.sqlServer}.database.windows.net'
-    }
     enableManagedIdentity: true
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     tags: commonTags
@@ -164,62 +108,81 @@ module appService './modules/app-service.bicep' = {
 }
 
 // ========================================
-// SQL FIREWALL RULES (Dynamic - based on App Service outbound IPs)
+// MODULE: KEY VAULT
 // ========================================
 
-// Parse App Service outbound IPs
-var appServiceOutboundIps = split(appService.outputs.outboundIpAddresses, ',')
-
-// Create firewall rule for each App Service outbound IP
-resource sqlFirewallRules 'Microsoft.Sql/servers/firewallRules@2023-05-01-preview' = [
-  for (ip, index) in appServiceOutboundIps: {
-    name: '${resourceNames.sqlServer}/AllowAppService-${index}'
-    properties: {
-      startIpAddress: trim(ip)
-      endIpAddress: trim(ip)
-    }
-    dependsOn: [
-      sqlDatabase
-      appService
-    ]
-  }
-]
-
-// ========================================
-// RBAC: App Service Managed Identity → Key Vault
-// ========================================
-
-// Key Vault Secrets User role definition ID
-var keyVaultSecretsUserRoleId = '4633458b-17de-408a-b874-0445c86b69e6'
-
-resource keyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(keyVault.outputs.keyVaultId, appService.outputs.managedIdentityPrincipalId, keyVaultSecretsUserRoleId)
-  scope: keyVault
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', keyVaultSecretsUserRoleId)
-    principalId: appService.outputs.managedIdentityPrincipalId
-    principalType: 'ServicePrincipal'
+module keyVault './modules/key-vault.bicep' = {
+  name: 'deploy-keyvault-${uniqueString(deployment().name)}'
+  params: {
+    keyVaultName: resourceNames.keyVault
+    location: location
+    appServicePrincipalId: appService.outputs.managedIdentityPrincipalId
+    tenantId: subscription().tenantId
+    enableSoftDelete: true
+    softDeleteRetentionInDays: 7 // Minimum for dev
+    enablePurgeProtection: false // Allow purge in dev for testing
+    skuName: 'standard' // Standard tier for dev
+    tags: commonTags
+    logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
   }
 }
+
+// ========================================
+// MODULE: SQL DATABASE
+// ========================================
+
+module sqlDatabase './modules/sql-database.bicep' = {
+  name: 'deploy-sql-${uniqueString(deployment().name)}'
+  params: {
+    sqlServerName: resourceNames.sqlServer
+    sqlDatabaseName: resourceNames.sqlDatabase
+    location: location
+    azureAdAdminObjectId: sqlAzureAdAdminObjectId
+    azureAdAdminUsername: sqlAzureAdAdminUsername
+    tenantId: subscription().tenantId
+    databaseSku: 'Basic' // Cost-optimized for dev
+    maxSizeBytes: 2147483648 // 2GB for Basic tier
+    zoneRedundant: false
+    publicNetworkAccess: true // For dev - use false with Private Endpoint in prod
+    tags: commonTags
+    logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
+  }
+}
+
+// ========================================
+// SQL FIREWALL RULES (Allow Azure services + App Service IPs)
+// ========================================
+
+// Allow Azure services to access SQL Server
+resource sqlFirewallAzureServices 'Microsoft.Sql/servers/firewallRules@2023-05-01-preview' = {
+  name: '${resourceNames.sqlServer}/AllowAzureServices'
+  properties: {
+    startIpAddress: '0.0.0.0'
+    endIpAddress: '0.0.0.0'
+  }
+  dependsOn: [
+    sqlDatabase
+  ]
+}
+
+// NOTE: App Service outbound IPs should be added manually or via Azure Portal
+// Dynamic firewall rules based on runtime values cannot be deployed in Bicep
+// See: docs/workshop/kitten-space-missions/solution/docs/POST-DEPLOYMENT.md
 
 // ========================================
 // KEY VAULT SECRETS
 // ========================================
 
 // SQL Connection String (stored as Key Vault secret)
-resource sqlConnectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2024-04-01-preview' = {
+resource sqlConnectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   name: '${resourceNames.keyVault}/SqlConnectionString'
   properties: {
-    value: 'Server=tcp:${resourceNames.sqlServer}.database.windows.net,1433;Database=${resourceNames.sqlDatabase};Authentication=Active Directory Managed Identity;Encrypt=true;TrustServerCertificate=false;Connection Timeout=30;'
+    value: 'Server=tcp:${sqlDatabase.outputs.sqlServerFqdn},1433;Database=${sqlDatabase.outputs.sqlDatabaseName};Authentication=Active Directory Managed Identity;Encrypt=true;TrustServerCertificate=false;Connection Timeout=30;'
     contentType: 'text/plain'
     attributes: {
       enabled: true
     }
   }
-  dependsOn: [
-    keyVault
-    sqlDatabase
-  ]
 }
 
 // ========================================
@@ -239,13 +202,13 @@ output appServiceUrl string = 'https://${appService.outputs.appServiceHostName}'
 output appServiceManagedIdentityPrincipalId string = appService.outputs.managedIdentityPrincipalId
 
 @description('SQL Server name')
-output sqlServerName string = resourceNames.sqlServer
+output sqlServerName string = sqlDatabase.outputs.sqlServerName
 
 @description('SQL Database name')
-output sqlDatabaseName string = resourceNames.sqlDatabase
+output sqlDatabaseName string = sqlDatabase.outputs.sqlDatabaseName
 
 @description('SQL Server FQDN')
-output sqlServerFqdn string = '${resourceNames.sqlServer}.database.windows.net'
+output sqlServerFqdn string = sqlDatabase.outputs.sqlServerFqdn
 
 @description('Key Vault name')
 output keyVaultName string = keyVault.outputs.keyVaultName
@@ -262,5 +225,5 @@ output appInsightsConnectionString string = monitoring.outputs.applicationInsigh
 @description('Log Analytics Workspace ID')
 output logAnalyticsWorkspaceId string = monitoring.outputs.logAnalyticsWorkspaceId
 
-@description('App Service outbound IP addresses')
+@description('App Service outbound IP addresses (add these to SQL firewall manually)')
 output appServiceOutboundIps string = appService.outputs.outboundIpAddresses

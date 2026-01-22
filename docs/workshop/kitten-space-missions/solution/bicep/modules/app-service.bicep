@@ -98,9 +98,6 @@ param autoScaleSettings AutoScaleSettingsType = {
   maxCapacity: 3
 }
 
-@description('Key Vault name for app settings references')
-param keyVaultName string = ''
-
 @description('Application Insights connection string')
 @secure()
 param appInsightsConnectionString string = ''
@@ -108,9 +105,6 @@ param appInsightsConnectionString string = ''
 @description('Application Insights instrumentation key')
 @secure()
 param appInsightsInstrumentationKey string = ''
-
-@description('Custom app settings as key-value pairs')
-param customAppSettings object = {}
 
 @description('Enable managed identity')
 param enableManagedIdentity bool = true
@@ -197,46 +191,40 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
         ]
         supportCredentials: false
       }
-      appSettings: union(
-        [
-          {
-            name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-            value: appInsightsInstrumentationKey
-          }
-          {
-            name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-            value: appInsightsConnectionString
-          }
-          {
-            name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
-            value: '~3'
-          }
-          {
-            name: 'XDT_MicrosoftApplicationInsights_Mode'
-            value: 'recommended'
-          }
-          {
-            name: 'ASPNETCORE_ENVIRONMENT'
-            value: 'Development'
-          }
-          {
-            name: 'WEBSITE_RUN_FROM_PACKAGE'
-            value: '1'
-          }
-        ],
-        [
-          for setting in items(customAppSettings): {
-            name: setting.key
-            value: setting.value
-          }
-        ]
-      )
+      appSettings: [
+        {
+          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+          value: appInsightsInstrumentationKey
+        }
+        {
+          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+          value: appInsightsConnectionString
+        }
+        {
+          name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
+          value: '~3'
+        }
+        {
+          name: 'XDT_MicrosoftApplicationInsights_Mode'
+          value: 'recommended'
+        }
+        {
+          name: 'ASPNETCORE_ENVIRONMENT'
+          value: 'Development'
+        }
+        {
+          name: 'WEBSITE_RUN_FROM_PACKAGE'
+          value: '1'
+        }
+      ]
+      // Note: customAppSettings parameter removed to simplify deployment
+      // Add custom settings via Azure Portal or separate deployment
     }
   }
 }
 
 // Auto-scaling rules (only if enabled and not Free/Shared tier)
-resource autoScaleSettings 'Microsoft.Insights/autoscalesettings@2022-10-01' = if (autoScaleSettings.enabled && sku.name != 'F1' && sku.name != 'D1') {
+resource appServiceAutoScale 'Microsoft.Insights/autoscalesettings@2022-10-01' = if (autoScaleSettings.enabled && sku.name != 'F1' && sku.name != 'D1') {
   name: '${appServicePlanName}-autoscale'
   location: location
   tags: tags
