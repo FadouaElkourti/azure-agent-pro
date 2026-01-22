@@ -65,7 +65,7 @@ module monitoring './modules/monitoring.bicep' = {
     applicationInsightsName: resourceNames.appInsights
     location: location
     logAnalyticsSku: 'PerGB2018'
-    retentionInDays: 7 // Cost-optimized for dev
+    retentionInDays: 30 // Minimum retention for PerGB2018 SKU (30-730 days)
     applicationType: 'web'
     samplingPercentage: 50 // 50% sampling for dev cost optimization
     tags: commonTags
