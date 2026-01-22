@@ -9,13 +9,13 @@
       "value": "dev"
     },
     "location": {
-      "value": "westeurope"
+      "value": "northeurope"
     },
     "sqlAzureAdAdminObjectId": {
-      "value": "<YOUR_AZURE_AD_OBJECT_ID>"
+      "value": "9aa41570-54c5-4484-8d2b-1b41aa7bf9ae"
     },
     "sqlAzureAdAdminUsername": {
-      "value": "<YOUR_AZURE_AD_USERNAME>"
+      "value": "f.Elkourti_Useroffice365.onmicrosoft.com#EXT#@certones.onmicrosoft.com"
     }
   }
 }
