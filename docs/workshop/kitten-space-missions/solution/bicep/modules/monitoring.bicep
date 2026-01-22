@@ -29,10 +29,10 @@ param location string = resourceGroup().location
 @description('Log Analytics Workspace SKU')
 param logAnalyticsSku LogAnalyticsSkuType = 'PerGB2018'
 
-@description('Log Analytics data retention in days')
-@minValue(7)
+@description('Log Analytics data retention in days (PerGB2018 SKU requires minimum 30 days)')
+@minValue(30)
 @maxValue(730)
-param retentionInDays int = 7
+param retentionInDays int = 30
 
 @description('Application Insights type')
 param applicationType AppInsightsType = 'web'
