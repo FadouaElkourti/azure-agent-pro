@@ -310,44 +310,24 @@ resource appServiceDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01
       {
         category: 'AppServiceHTTPLogs'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 7
-        }
       }
       {
         category: 'AppServiceConsoleLogs'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 7
-        }
       }
       {
         category: 'AppServiceAppLogs'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 7
-        }
       }
       {
         category: 'AppServicePlatformLogs'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 7
-        }
       }
     ]
     metrics: [
       {
         category: 'AllMetrics'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 7
-        }
       }
     ]
   }

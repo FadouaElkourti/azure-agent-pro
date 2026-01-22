@@ -134,34 +134,8 @@ resource tde 'Microsoft.Sql/servers/databases/transparentDataEncryption@2023-05-
   }
 }
 
-// Diagnostic settings for SQL Server
-resource sqlServerDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: '${sqlServerName}-diagnostics'
-  scope: sqlServer
-  properties: {
-    workspaceId: logAnalyticsWorkspaceId
-    logs: [
-      {
-        category: 'SQLSecurityAuditEvents'
-        enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 7
-        }
-      }
-    ]
-    metrics: [
-      {
-        category: 'AllMetrics'
-        enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 7
-        }
-      }
-    ]
-  }
-}
+// Note: SQL Server diagnostic settings removed as SQLSecurityAuditEvents category is not supported
+// Audit logs should be configured via SQL Server auditing settings instead
 
 // Diagnostic settings for SQL Database
 resource sqlDatabaseDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
@@ -173,36 +147,20 @@ resource sqlDatabaseDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-0
       {
         category: 'SQLInsights'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 7
-        }
       }
       {
         category: 'Errors'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 7
-        }
       }
       {
         category: 'DatabaseWaitStatistics'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 7
-        }
       }
     ]
     metrics: [
       {
         category: 'AllMetrics'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 7
-        }
       }
     ]
   }
