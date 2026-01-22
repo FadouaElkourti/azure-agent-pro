@@ -32,7 +32,7 @@ param enableSoftDelete bool = true
 param softDeleteRetentionInDays int = 7
 
 @description('Enable purge protection (prevents permanent deletion)')
-param enablePurgeProtection bool = false
+param enablePurgeProtection bool = true // Default true - cannot be disabled once enabled
 
 @description('SKU name for Key Vault')
 @allowed(['standard', 'premium'])
