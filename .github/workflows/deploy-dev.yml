@@ -14,9 +14,10 @@ on:
       - 'docs/workshop/kitten-space-missions/solution/bicep/**'
 
 permissions:
-  id-token: write  # Required for OIDC
+  id-token: write     # Required for OIDC
   contents: read
-  issues: write    # To create deployment issue if fails
+  issues: write       # To create deployment issue if fails
+  deployments: write  # To create GitHub deployments
 
 env:
   BICEP_PATH: docs/workshop/kitten-space-missions/solution/bicep
