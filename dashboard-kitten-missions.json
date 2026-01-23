@@ -1,0 +1,393 @@
+{
+    "properties": {
+        "lenses": {
+            "0": {
+                "order": 0,
+                "parts": {
+                    "0": {
+                        "position": {
+                            "x": 0,
+                            "y": 0,
+                            "colSpan": 6,
+                            "rowSpan": 4
+                        },
+                        "metadata": {
+                            "inputs": [
+                                {
+                                    "name": "ComponentId",
+                                    "value": "/subscriptions/d0c6d1b0-6b0a-4b6e-9ec1-85ff1ab0859d/resourceGroups/rg-kitten-missions-dev/providers/microsoft.insights/components/appi-kitten-missions-dev"
+                                },
+                                {
+                                    "name": "Query",
+                                    "value": "requests\n| where timestamp > ago(24h)\n| summarize RequestCount = count() by bin(timestamp, 5m)\n| render timechart"
+                                },
+                                {
+                                    "name": "TimeRange",
+                                    "value": "P1D"
+                                },
+                                {
+                                    "name": "Dimensions",
+                                    "value": {
+                                        "xAxis": {
+                                            "name": "timestamp",
+                                            "type": "datetime"
+                                        },
+                                        "yAxis": [
+                                            {
+                                                "name": "RequestCount",
+                                                "type": "long"
+                                            }
+                                        ],
+                                        "splitBy": [],
+                                        "aggregation": "Sum"
+                                    }
+                                }
+                            ],
+                            "type": "Extension/AppInsightsExtension/PartType/AnalyticsLineChartPart",
+                            "settings": {
+                                "content": {
+                                    "PartTitle": "📊 Request Rate (últimas 24h)",
+                                    "PartSubTitle": "Requests per 5 minutes"
+                                }
+                            }
+                        }
+                    },
+                    "1": {
+                        "position": {
+                            "x": 6,
+                            "y": 0,
+                            "colSpan": 6,
+                            "rowSpan": 4
+                        },
+                        "metadata": {
+                            "inputs": [
+                                {
+                                    "name": "ComponentId",
+                                    "value": "/subscriptions/d0c6d1b0-6b0a-4b6e-9ec1-85ff1ab0859d/resourceGroups/rg-kitten-missions-dev/providers/microsoft.insights/components/appi-kitten-missions-dev"
+                                },
+                                {
+                                    "name": "Query",
+                                    "value": "requests\n| where timestamp > ago(1h)\n| summarize p95 = percentile(duration, 95) by name\n| order by p95 desc\n| render barchart"
+                                },
+                                {
+                                    "name": "TimeRange",
+                                    "value": "PT1H"
+                                }
+                            ],
+                            "type": "Extension/AppInsightsExtension/PartType/AnalyticsBarChartPart",
+                            "settings": {
+                                "content": {
+                                    "PartTitle": "⏱️ Response Time P95 por Endpoint",
+                                    "PartSubTitle": "Latency analysis (última hora)"
+                                }
+                            }
+                        }
+                    },
+                    "2": {
+                        "position": {
+                            "x": 0,
+                            "y": 4,
+                            "colSpan": 3,
+                            "rowSpan": 3
+                        },
+                        "metadata": {
+                            "inputs": [
+                                {
+                                    "name": "ComponentId",
+                                    "value": "/subscriptions/d0c6d1b0-6b0a-4b6e-9ec1-85ff1ab0859d/resourceGroups/rg-kitten-missions-dev/providers/microsoft.insights/components/appi-kitten-missions-dev"
+                                },
+                                {
+                                    "name": "Query",
+                                    "value": "requests\n| where timestamp > ago(1h)\n| summarize TotalRequests = count(), FailedRequests = countif(success == false)\n| extend ErrorRate = round((FailedRequests * 100.0) / TotalRequests, 2)\n| project ErrorRate"
+                                },
+                                {
+                                    "name": "TimeRange",
+                                    "value": "PT1H"
+                                }
+                            ],
+                            "type": "Extension/AppInsightsExtension/PartType/AnalyticsScalarPart",
+                            "settings": {
+                                "content": {
+                                    "PartTitle": "🚨 Error Rate",
+                                    "PartSubTitle": "Percentage (última hora)"
+                                }
+                            }
+                        }
+                    },
+                    "3": {
+                        "position": {
+                            "x": 3,
+                            "y": 4,
+                            "colSpan": 3,
+                            "rowSpan": 3
+                        },
+                        "metadata": {
+                            "inputs": [
+                                {
+                                    "name": "ComponentId",
+                                    "value": "/subscriptions/d0c6d1b0-6b0a-4b6e-9ec1-85ff1ab0859d/resourceGroups/rg-kitten-missions-dev/providers/microsoft.insights/components/appi-kitten-missions-dev"
+                                },
+                                {
+                                    "name": "Query",
+                                    "value": "availabilityResults\n| where timestamp > ago(1h)\n| summarize AvailabilityRate = avg(todouble(success)) * 100\n| project AvailabilityRate = round(AvailabilityRate, 2)"
+                                },
+                                {
+                                    "name": "TimeRange",
+                                    "value": "PT1H"
+                                }
+                            ],
+                            "type": "Extension/AppInsightsExtension/PartType/AnalyticsScalarPart",
+                            "settings": {
+                                "content": {
+                                    "PartTitle": "✅ Availability",
+                                    "PartSubTitle": "Percentage (última hora)"
+                                }
+                            }
+                        }
+                    },
+                    "4": {
+                        "position": {
+                            "x": 6,
+                            "y": 4,
+                            "colSpan": 6,
+                            "rowSpan": 3
+                        },
+                        "metadata": {
+                            "inputs": [
+                                {
+                                    "name": "resourceId",
+                                    "value": "/subscriptions/d0c6d1b0-6b0a-4b6e-9ec1-85ff1ab0859d/resourceGroups/rg-kitten-missions-dev/providers/Microsoft.Sql/servers/sql-kitten-missions-dev-hvdtoc/databases/sqldb-kitten-missions-dev"
+                                },
+                                {
+                                    "name": "timeContext",
+                                    "value": {
+                                        "durationMs": 3600000,
+                                        "endTime": null,
+                                        "createdTime": "2026-01-23T10:00:00.000Z",
+                                        "isInitialTime": false,
+                                        "grain": 1,
+                                        "useDashboardTimeRange": false
+                                    }
+                                },
+                                {
+                                    "name": "metricName",
+                                    "value": "dtu_consumption_percent"
+                                },
+                                {
+                                    "name": "aggregationType",
+                                    "value": 4
+                                },
+                                {
+                                    "name": "chartType",
+                                    "value": 2
+                                }
+                            ],
+                            "type": "Extension/Microsoft_Azure_Monitoring/PartType/MetricsChartPart",
+                            "settings": {
+                                "content": {
+                                    "PartTitle": "💾 SQL Database DTU Usage",
+                                    "PartSubTitle": "Average percentage"
+                                }
+                            }
+                        }
+                    },
+                    "5": {
+                        "position": {
+                            "x": 0,
+                            "y": 7,
+                            "colSpan": 6,
+                            "rowSpan": 4
+                        },
+                        "metadata": {
+                            "inputs": [
+                                {
+                                    "name": "ComponentId",
+                                    "value": "/subscriptions/d0c6d1b0-6b0a-4b6e-9ec1-85ff1ab0859d/resourceGroups/rg-kitten-missions-dev/providers/microsoft.insights/components/appi-kitten-missions-dev"
+                                },
+                                {
+                                    "name": "Query",
+                                    "value": "requests\n| where timestamp > ago(1h) and success == false\n| project timestamp, name, url, resultCode, duration, operation_Name\n| order by timestamp desc\n| take 20"
+                                },
+                                {
+                                    "name": "TimeRange",
+                                    "value": "PT1H"
+                                }
+                            ],
+                            "type": "Extension/AppInsightsExtension/PartType/AnalyticsGridPart",
+                            "settings": {
+                                "content": {
+                                    "PartTitle": "❌ Failed Requests (últimos 20)",
+                                    "PartSubTitle": "Error details"
+                                }
+                            }
+                        }
+                    },
+                    "6": {
+                        "position": {
+                            "x": 6,
+                            "y": 7,
+                            "colSpan": 6,
+                            "rowSpan": 4
+                        },
+                        "metadata": {
+                            "inputs": [
+                                {
+                                    "name": "ComponentId",
+                                    "value": "/subscriptions/d0c6d1b0-6b0a-4b6e-9ec1-85ff1ab0859d/resourceGroups/rg-kitten-missions-dev/providers/microsoft.insights/components/appi-kitten-missions-dev"
+                                },
+                                {
+                                    "name": "Query",
+                                    "value": "dependencies\n| where timestamp > ago(1h)\n| summarize Count = count(), AvgDuration = avg(duration), SuccessRate = avg(todouble(success)) * 100 by name, type\n| order by AvgDuration desc\n| take 10"
+                                },
+                                {
+                                    "name": "TimeRange",
+                                    "value": "PT1H"
+                                }
+                            ],
+                            "type": "Extension/AppInsightsExtension/PartType/AnalyticsGridPart",
+                            "settings": {
+                                "content": {
+                                    "PartTitle": "🔗 Dependency Calls",
+                                    "PartSubTitle": "SQL, Key Vault, HTTP (Top 10)"
+                                }
+                            }
+                        }
+                    },
+                    "7": {
+                        "position": {
+                            "x": 0,
+                            "y": 11,
+                            "colSpan": 6,
+                            "rowSpan": 4
+                        },
+                        "metadata": {
+                            "inputs": [
+                                {
+                                    "name": "resourceId",
+                                    "value": "/subscriptions/d0c6d1b0-6b0a-4b6e-9ec1-85ff1ab0859d/resourceGroups/rg-kitten-missions-dev/providers/Microsoft.Web/sites/app-kitten-missions-dev"
+                                },
+                                {
+                                    "name": "timeContext",
+                                    "value": {
+                                        "durationMs": 3600000,
+                                        "endTime": null,
+                                        "createdTime": "2026-01-23T10:00:00.000Z",
+                                        "isInitialTime": false,
+                                        "grain": 1,
+                                        "useDashboardTimeRange": false
+                                    }
+                                },
+                                {
+                                    "name": "metricName",
+                                    "value": "CpuTime"
+                                },
+                                {
+                                    "name": "aggregationType",
+                                    "value": 1
+                                },
+                                {
+                                    "name": "chartType",
+                                    "value": 2
+                                }
+                            ],
+                            "type": "Extension/Microsoft_Azure_Monitoring/PartType/MetricsChartPart",
+                            "settings": {
+                                "content": {
+                                    "PartTitle": "🖥️ App Service CPU Time",
+                                    "PartSubTitle": "Total seconds"
+                                }
+                            }
+                        }
+                    },
+                    "8": {
+                        "position": {
+                            "x": 6,
+                            "y": 11,
+                            "colSpan": 6,
+                            "rowSpan": 4
+                        },
+                        "metadata": {
+                            "inputs": [
+                                {
+                                    "name": "resourceId",
+                                    "value": "/subscriptions/d0c6d1b0-6b0a-4b6e-9ec1-85ff1ab0859d/resourceGroups/rg-kitten-missions-dev/providers/Microsoft.Web/sites/app-kitten-missions-dev"
+                                },
+                                {
+                                    "name": "timeContext",
+                                    "value": {
+                                        "durationMs": 3600000,
+                                        "endTime": null,
+                                        "createdTime": "2026-01-23T10:00:00.000Z",
+                                        "isInitialTime": false,
+                                        "grain": 1,
+                                        "useDashboardTimeRange": false
+                                    }
+                                },
+                                {
+                                    "name": "metricName",
+                                    "value": "MemoryWorkingSet"
+                                },
+                                {
+                                    "name": "aggregationType",
+                                    "value": 4
+                                },
+                                {
+                                    "name": "chartType",
+                                    "value": 2
+                                }
+                            ],
+                            "type": "Extension/Microsoft_Azure_Monitoring/PartType/MetricsChartPart",
+                            "settings": {
+                                "content": {
+                                    "PartTitle": "💾 App Service Memory",
+                                    "PartSubTitle": "Working set average"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "metadata": {
+            "model": {
+                "timeRange": {
+                    "value": {
+                        "relative": {
+                            "duration": 24,
+                            "timeUnit": 1
+                        }
+                    },
+                    "type": "MsPortalFx.Composition.Configuration.ValueTypes.TimeRange"
+                },
+                "filterLocale": {
+                    "value": "en-us"
+                },
+                "filters": {
+                    "value": {
+                        "MsPortalFx_TimeRange": {
+                            "model": {
+                                "format": "utc",
+                                "granularity": "auto",
+                                "relative": "24h"
+                            },
+                            "displayCache": {
+                                "name": "UTC Time",
+                                "value": "Past 24 hours"
+                            },
+                            "filteredPartIds": []
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "name": "Kitten Missions - Dev Dashboard",
+    "type": "Microsoft.Portal/dashboards",
+    "location": "INSERT LOCATION",
+    "tags": {
+        "hidden-title": "Kitten Missions - Dev Dashboard",
+        "Environment": "Development",
+        "Project": "KittenSpaceMissions"
+    },
+    "apiVersion": "2020-09-01-preview"
+}

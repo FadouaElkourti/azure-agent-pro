@@ -1,0 +1,153 @@
+📊 Monitoreando deployment Run ID: 21280335755
+================================================
+
+⏱️  Check #1 (09:54:01)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+* Pre-Deployment Checks (ID 61248556337)
+
+⏱️  Check #2 (09:54:33)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+* Deploy Infrastructure (ID 61248615213)
+
+⏱️  Check #3 (09:55:05)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+* Deploy Infrastructure (ID 61248615213)
+
+⏱️  Check #4 (09:55:37)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+* Deploy Infrastructure (ID 61248615213)
+
+⏱️  Check #5 (09:56:09)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+* Deploy Infrastructure (ID 61248615213)
+
+⏱️  Check #6 (09:56:42)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+* Deploy Infrastructure (ID 61248615213)
+
+⏱️  Check #7 (09:57:14)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+* Deploy Infrastructure (ID 61248615213)
+
+⏱️  Check #8 (09:57:46)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+* Deploy Infrastructure (ID 61248615213)
+
+⏱️  Check #9 (09:58:18)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+✓ Deploy Infrastructure in 3m59s (ID 61248615213)
+* Smoke Tests (ID 61248959546)
+
+⏱️  Check #10 (09:58:51)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+✓ Deploy Infrastructure in 3m59s (ID 61248615213)
+* Smoke Tests (ID 61248959546)
+
+⏱️  Check #11 (09:59:23)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+✓ Deploy Infrastructure in 3m59s (ID 61248615213)
+X Smoke Tests in 1m4s (ID 61248959546)
+* Rollback (if needed) (ID 61249060730)
+
+⏱️  Check #12 (09:59:56)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+✓ Deploy Infrastructure in 3m59s (ID 61248615213)
+X Smoke Tests in 1m4s (ID 61248959546)
+* Rollback (if needed) (ID 61249060730)
+
+⏱️  Check #13 (10:00:29)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+✓ Deploy Infrastructure in 3m59s (ID 61248615213)
+X Smoke Tests in 1m4s (ID 61248959546)
+* Rollback (if needed) (ID 61249060730)
+
+⏱️  Check #14 (10:01:02)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+✓ Deploy Infrastructure in 3m59s (ID 61248615213)
+X Smoke Tests in 1m4s (ID 61248959546)
+* Rollback (if needed) (ID 61249060730)
+
+⏱️  Check #15 (10:01:35)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+✓ Deploy Infrastructure in 3m59s (ID 61248615213)
+X Smoke Tests in 1m4s (ID 61248959546)
+* Rollback (if needed) (ID 61249060730)
+
+⏱️  Check #16 (10:02:08)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+✓ Deploy Infrastructure in 3m59s (ID 61248615213)
+X Smoke Tests in 1m4s (ID 61248959546)
+* Rollback (if needed) (ID 61249060730)
+
+⏱️  Check #17 (10:02:41)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+✓ Deploy Infrastructure in 3m59s (ID 61248615213)
+X Smoke Tests in 1m4s (ID 61248959546)
+* Rollback (if needed) (ID 61249060730)
+
+⏱️  Check #18 (10:03:14)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+✓ Deploy Infrastructure in 3m59s (ID 61248615213)
+X Smoke Tests in 1m4s (ID 61248959546)
+* Rollback (if needed) (ID 61249060730)
+
+⏱️  Check #19 (10:03:48)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+✓ Deploy Infrastructure in 3m59s (ID 61248615213)
+X Smoke Tests in 1m4s (ID 61248959546)
+* Rollback (if needed) (ID 61249060730)
+
+⏱️  Check #20 (10:04:21)
+{"conclusion":null,"status":"in_progress"}
+* main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+✓ Deploy Infrastructure in 3m59s (ID 61248615213)
+X Smoke Tests in 1m4s (ID 61248959546)
+* Rollback (if needed) (ID 61249060730)
+
+⏱️  Check #21 (10:04:54)
+{"conclusion":"failure","status":"completed"}
+X main Deploy to Azure (Dev) · 21280335755
+✓ Pre-Deployment Checks in 35s (ID 61248556337)
+✓ Deploy Infrastructure in 3m59s (ID 61248615213)
+X Smoke Tests in 1m4s (ID 61248959546)
+X Rollback (if needed) in 5m8s (ID 61249060730)
+
+❌ Deployment falló
