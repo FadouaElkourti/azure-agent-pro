@@ -31,8 +31,8 @@ param enableSoftDelete bool = true
 @maxValue(90)
 param softDeleteRetentionInDays int = 7
 
-@description('Enable purge protection (prevents permanent deletion)')
-param enablePurgeProtection bool = true // Default true - cannot be disabled once enabled
+@description('Enable purge protection (prevents permanent deletion - irreversible once enabled)')
+param enablePurgeProtection bool = true // Default true - cannot be disabled once enabled (Azure constraint)
 
 @description('SKU name for Key Vault')
 @allowed(['standard', 'premium'])
@@ -106,20 +106,14 @@ resource diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' 
       {
         category: 'AuditEvent'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 7
-        }
+        // retentionPolicy removed: not supported in new diagnostic settings
       }
     ]
     metrics: [
       {
         category: 'AllMetrics'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 7
-        }
+        // retentionPolicy removed: not supported in new diagnostic settings
       }
     ]
   }
