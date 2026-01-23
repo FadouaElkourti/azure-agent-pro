@@ -31,7 +31,8 @@ param sqlAzureAdAdminUsername string
 // VARIABLES
 // ========================================
 
-var uniqueSuffix = substring(uniqueString(resourceGroup().id), 0, 6)
+// Use deployment unique string instead of RG to ensure fresh KV names (avoid soft-delete conflicts)
+var uniqueSuffix = substring(uniqueString(resourceGroup().id, deployment().name), 0, 6)
 
 // Resource naming following azure-agent-pro conventions
 var resourceNames = {
@@ -120,7 +121,7 @@ module keyVault './modules/key-vault.bicep' = {
     tenantId: subscription().tenantId
     enableSoftDelete: true
     softDeleteRetentionInDays: 7 // Minimum for dev
-    enablePurgeProtection: false // Allow purge in dev for testing
+    enablePurgeProtection: true // Required: Once enabled, cannot be disabled (Azure constraint)
     skuName: 'standard' // Standard tier for dev
     tags: commonTags
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
